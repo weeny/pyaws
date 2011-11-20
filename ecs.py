@@ -179,6 +179,12 @@ __licenseKeys = (
     (lambda key: os.environ.get('AWS_ACCESS_KEY_ID', None))
    )
 
+__associateTags = (
+    (lambda key: key),
+    (lambda key: ASSOCIATE_TAG), 
+    (lambda key: os.environ.get('AWS_ASSOCIATE_TAG', None))
+   )
+
 __secretAccessKeys = (
     (lambda key: key),
     (lambda key: SECRET_ACCESS_KEY), 
@@ -463,6 +469,7 @@ class pagedIterator:
 # Exception classes
 class AWSException(Exception) : pass
 class NoLicenseKey(AWSException) : pass
+class NoAssociateTag(AWSException): pass
 class NoSecretAccessKey(AWSException) : pass
 class BadLocale(AWSException) : pass
 class BadOption(AWSException): pass
@@ -509,6 +516,27 @@ def getLocale():
     """Get the locale"""
     return LOCALE
 
+
+def setAssociateTag(associate_tag=None):
+    """Set AWS Associate Tag Required since Oct 2011
+        AWS won't let you search without an associate tag
+        """
+
+    global ASSOCIATE_TAG
+    for get in __associateTags:
+        rc = get(associate_tag)
+        if rc: 
+            ASSOCIATE_TAG = rc;
+            return;
+    raise NoAssociateTag, ("Please get an associate tag from  http://www.amazon.com/webservices")
+
+def getAssociateTag():
+    """Get Associate Tag;
+    if no associate tag is known, NoAssociateTag is raised.
+    """
+    if not ASSOCIATE_TAG:
+        setAssociateTag()
+    return ASSOCIATE_TAG
 
 def setLicenseKey(license_key=None):
     """Set AWS license key.
@@ -602,6 +630,9 @@ def buildRequest(argv):
 
     if not argv['AWSAccessKeyId']:
         argv['AWSAccessKeyId'] = getLicenseKey()
+    if not argv['AssociateTag']:
+        argv['AssociateTag'] = getAssociateTag()
+        
     argv.update(getOptions())
     argv.update({'Service':'AWSECommerceService',
                  'Timestamp':datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
@@ -705,34 +736,34 @@ def unmarshal(XMLSearch, arguments, element, plugins=None, rc=None):
     
 # User interfaces
 
-def ItemLookup(ItemId, IdType=None, SearchIndex=None, MerchantId=None, Condition=None, DeliveryMethod=None, ISPUPostalCode=None, OfferPage=None, ReviewPage=None, ReviewSort=None, VariationPage=None, ResponseGroup=None, AWSAccessKeyId=None): 
+def ItemLookup(ItemId, IdType=None, SearchIndex=None, MerchantId=None, Condition=None, DeliveryMethod=None, ISPUPostalCode=None, OfferPage=None, ReviewPage=None, ReviewSort=None, VariationPage=None, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None): 
     '''ItemLookup in ECS'''
     return pagedWrapper(XMLItemLookup, vars(), 
         ('Items', __plugins['ItemLookup']['isPaged']['Items']), __plugins['ItemLookup'])
 
     
-def XMLItemLookup(ItemId, IdType=None, SearchIndex=None, MerchantId=None, Condition=None, DeliveryMethod=None, ISPUPostalCode=None, OfferPage=None, ReviewPage=None, ReviewSort=None, VariationPage=None, ResponseGroup=None, AWSAccessKeyId=None): 
+def XMLItemLookup(ItemId, IdType=None, SearchIndex=None, MerchantId=None, Condition=None, DeliveryMethod=None, ISPUPostalCode=None, OfferPage=None, ReviewPage=None, ReviewSort=None, VariationPage=None, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None): 
     '''DOM representation of ItemLookup in ECS'''
 
     Operation = "ItemLookup"
     return query(buildRequest(vars()))
 
 
-def ItemSearch(Keywords, SearchIndex="Blended", Availability=None, Title=None, Power=None, BrowseNode=None, Artist=None, Author=None, Actor=None, Director=None, AudienceRating=None, Manufacturer=None, MusicLabel=None, Composer=None, Publisher=None, Brand=None, Conductor=None, Orchestra=None, TextStream=None, ItemPage=None, OfferPage=None, ReviewPage=None, Sort=None, City=None, Cuisine=None, Neighborhood=None, MinimumPrice=None, MaximumPrice=None, MerchantId=None, Condition=None, DeliveryMethod=None, ResponseGroup=None, AWSAccessKeyId=None):  
+def ItemSearch(Keywords, SearchIndex="Blended", Availability=None, Title=None, Power=None, BrowseNode=None, Artist=None, Author=None, Actor=None, Director=None, AudienceRating=None, Manufacturer=None, MusicLabel=None, Composer=None, Publisher=None, Brand=None, Conductor=None, Orchestra=None, TextStream=None, ItemPage=None, OfferPage=None, ReviewPage=None, Sort=None, City=None, Cuisine=None, Neighborhood=None, MinimumPrice=None, MaximumPrice=None, MerchantId=None, Condition=None, DeliveryMethod=None, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):  
     '''ItemSearch in ECS'''
 
     return pagedWrapper(XMLItemSearch, vars(), 
         ('Items', __plugins['ItemSearch']['isPaged']['Items']), __plugins['ItemSearch'])
 
 
-def XMLItemSearch(Keywords, SearchIndex="Blended", Availability=None, Title=None, Power=None, BrowseNode=None, Artist=None, Author=None, Actor=None, Director=None, AudienceRating=None, Manufacturer=None, MusicLabel=None, Composer=None, Publisher=None, Brand=None, Conductor=None, Orchestra=None, TextStream=None, ItemPage=None, OfferPage=None, ReviewPage=None, Sort=None, City=None, Cuisine=None, Neighborhood=None, MinimumPrice=None, MaximumPrice=None, MerchantId=None, Condition=None, DeliveryMethod=None, ResponseGroup=None, AWSAccessKeyId=None):  
+def XMLItemSearch(Keywords, SearchIndex="Blended", Availability=None, Title=None, Power=None, BrowseNode=None, Artist=None, Author=None, Actor=None, Director=None, AudienceRating=None, Manufacturer=None, MusicLabel=None, Composer=None, Publisher=None, Brand=None, Conductor=None, Orchestra=None, TextStream=None, ItemPage=None, OfferPage=None, ReviewPage=None, Sort=None, City=None, Cuisine=None, Neighborhood=None, MinimumPrice=None, MaximumPrice=None, MerchantId=None, Condition=None, DeliveryMethod=None, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):  
     '''DOM representation of ItemSearch in ECS'''
 
     Operation = "ItemSearch"
     return query(buildRequest(vars()))
 
 
-def SimilarityLookup(ItemId, SimilarityType=None, MerchantId=None, Condition=None, DeliveryMethod=None, ResponseGroup=None, AWSAccessKeyId=None):  
+def SimilarityLookup(ItemId, SimilarityType=None, MerchantId=None, Condition=None, DeliveryMethod=None, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):  
     '''SimilarityLookup in ECS'''
 
     argv = vars()
@@ -746,7 +777,7 @@ def SimilarityLookup(ItemId, SimilarityType=None, MerchantId=None, Condition=Non
     return rawIterator(XMLSimilarityLookup, argv, 'Items', plugins)
 
 
-def XMLSimilarityLookup(ItemId, SimilarityType=None, MerchantId=None, Condition=None, DeliveryMethod=None, ResponseGroup=None, AWSAccessKeyId=None):  
+def XMLSimilarityLookup(ItemId, SimilarityType=None, MerchantId=None, Condition=None, DeliveryMethod=None, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):  
     '''DOM representation of SimilarityLookup in ECS'''
 
     Operation = "SimilarityLookup"
@@ -755,7 +786,7 @@ def XMLSimilarityLookup(ItemId, SimilarityType=None, MerchantId=None, Condition=
 
 # List Operations
 
-def ListLookup(ListType, ListId, ProductPage=None, ProductGroup=None, Sort=None, MerchantId=None, Condition=None, DeliveryMethod=None, ResponseGroup=None, AWSAccessKeyId=None):  
+def ListLookup(ListType, ListId, ProductPage=None, ProductGroup=None, Sort=None, MerchantId=None, Condition=None, DeliveryMethod=None, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):  
     '''ListLookup in ECS'''
 
     argv = vars()
@@ -770,14 +801,14 @@ def ListLookup(ListType, ListId, ProductPage=None, ProductGroup=None, Sort=None,
         ('Lists', plugins['isPaged']['Lists']), plugins)
 
 
-def XMLListLookup(ListType, ListId, ProductPage=None, ProductGroup=None, Sort=None, MerchantId=None, Condition=None, DeliveryMethod=None, ResponseGroup=None, AWSAccessKeyId=None):  
+def XMLListLookup(ListType, ListId, ProductPage=None, ProductGroup=None, Sort=None, MerchantId=None, Condition=None, DeliveryMethod=None, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):  
     '''DOM representation of ListLookup in ECS'''
 
     Operation = "ListLookup"
     return query(buildRequest(vars()))
 
 
-def ListSearch(ListType, Name=None, FirstName=None, LastName=None, Email=None, City=None, State=None, ListPage=None, ResponseGroup=None, AWSAccessKeyId=None):
+def ListSearch(ListType, Name=None, FirstName=None, LastName=None, Email=None, City=None, State=None, ListPage=None, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''ListSearch in ECS'''
 
     argv = vars()
@@ -792,7 +823,7 @@ def ListSearch(ListType, Name=None, FirstName=None, LastName=None, Email=None, C
         ('Lists', plugins['isPaged']['Lists']), plugins)
 
 
-def XMLListSearch(ListType, Name=None, FirstName=None, LastName=None, Email=None, City=None, State=None, ListPage=None, ResponseGroup=None, AWSAccessKeyId=None):
+def XMLListSearch(ListType, Name=None, FirstName=None, LastName=None, Email=None, City=None, State=None, ListPage=None, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''DOM representation of ListSearch in ECS'''
 
     Operation = "ListSearch"
@@ -800,13 +831,13 @@ def XMLListSearch(ListType, Name=None, FirstName=None, LastName=None, Email=None
 
 
 #Remote Shopping Cart Operations
-def CartCreate(Items, Quantities, ResponseGroup=None, AWSAccessKeyId=None):
+def CartCreate(Items, Quantities, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''CartCreate in ECS'''
 
     return __cartOperation(XMLCartCreate, vars())
 
 
-def XMLCartCreate(Items, Quantities, ResponseGroup=None, AWSAccessKeyId=None):
+def XMLCartCreate(Items, Quantities, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''DOM representation of CartCreate in ECS'''
 
     Operation = "CartCreate"
@@ -818,13 +849,13 @@ def XMLCartCreate(Items, Quantities, ResponseGroup=None, AWSAccessKeyId=None):
     return query(buildRequest(argv))
 
 
-def CartAdd(Cart, Items, Quantities, ResponseGroup=None, AWSAccessKeyId=None):
+def CartAdd(Cart, Items, Quantities, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''CartAdd in ECS'''
 
     return __cartOperation(XMLCartAdd, vars())
 
 
-def XMLCartAdd(Cart, Items, Quantities, ResponseGroup=None, AWSAccessKeyId=None):
+def XMLCartAdd(Cart, Items, Quantities, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''DOM representation of CartAdd in ECS'''
 
     Operation = "CartAdd"
@@ -838,12 +869,12 @@ def XMLCartAdd(Cart, Items, Quantities, ResponseGroup=None, AWSAccessKeyId=None)
     return query(buildRequest(argv))
 
 
-def CartGet(Cart, ResponseGroup=None, AWSAccessKeyId=None):
+def CartGet(Cart, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''CartGet in ECS'''
     return __cartOperation(XMLCartGet, vars())
 
 
-def XMLCartGet(Cart, ResponseGroup=None, AWSAccessKeyId=None):
+def XMLCartGet(Cart, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''DOM representation of CartGet in ECS'''
 
     Operation = "CartGet"
@@ -854,13 +885,13 @@ def XMLCartGet(Cart, ResponseGroup=None, AWSAccessKeyId=None):
     return query(buildRequest(argv))
 
 
-def CartModify(Cart, Items, Actions, ResponseGroup=None, AWSAccessKeyId=None):
+def CartModify(Cart, Items, Actions, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''CartModify in ECS'''
 
     return __cartOperation(XMLCartModify, vars())
 
 
-def XMLCartModify(Cart, Items, Actions, ResponseGroup=None, AWSAccessKeyId=None):
+def XMLCartModify(Cart, Items, Actions, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''DOM representation of CartModify in ECS'''
     Operation = "CartModify"
     CartId = Cart.CartId
@@ -873,12 +904,12 @@ def XMLCartModify(Cart, Items, Actions, ResponseGroup=None, AWSAccessKeyId=None)
     return query(buildRequest(argv))
 
     
-def CartClear(Cart, ResponseGroup=None, AWSAccessKeyId=None):
+def CartClear(Cart, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''CartClear in ECS'''
     return __cartOperation(XMLCartClear, vars())
 
 
-def XMLCartClear(Cart, ResponseGroup=None, AWSAccessKeyId=None):
+def XMLCartClear(Cart, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''DOM representation of CartClear in ECS'''
 
     Operation = "CartClear"
@@ -916,7 +947,7 @@ def __cartOperation(XMLSearch, arguments):
 
 
 # Seller Operation
-def SellerLookup(Sellers, FeedbackPage=None, ResponseGroup=None, AWSAccessKeyId=None):
+def SellerLookup(Sellers, FeedbackPage=None, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''SellerLookup in AWS'''
 
     argv = vars()
@@ -930,7 +961,7 @@ def SellerLookup(Sellers, FeedbackPage=None, ResponseGroup=None, AWSAccessKeyId=
     return rawIterator(XMLSellerLookup, argv, 'Sellers', plugins)
 
 
-def XMLSellerLookup(Sellers, FeedbackPage=None, ResponseGroup=None, AWSAccessKeyId=None):
+def XMLSellerLookup(Sellers, FeedbackPage=None, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''DOM representation of SellerLookup in AWS'''
 
     Operation = "SellerLookup"
@@ -940,7 +971,7 @@ def XMLSellerLookup(Sellers, FeedbackPage=None, ResponseGroup=None, AWSAccessKey
     return query(buildRequest(argv))
 
 
-def SellerListingLookup(SellerId, Id, IdType="Listing", ResponseGroup=None, AWSAccessKeyId=None):
+def SellerListingLookup(SellerId, Id, IdType="Listing", ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''SellerListingLookup in AWS
 
     Notice: although the repsonse includes TotalPage, TotalResults, 
@@ -958,14 +989,14 @@ def SellerListingLookup(SellerId, Id, IdType="Listing", ResponseGroup=None, AWSA
     return rawIterator(XMLSellerListingLookup, argv, "SellerListings", plugins)
 
 
-def XMLSellerListingLookup(SellerId, Id, IdType="Listing", ResponseGroup=None, AWSAccessKeyId=None):
+def XMLSellerListingLookup(SellerId, Id, IdType="Listing", ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''DOM representation of SellerListingLookup in AWS'''
 
     Operation = "SellerListingLookup"
     return query(buildRequest(vars()))
 
 
-def SellerListingSearch(SellerId, Title=None, Sort=None, ListingPage=None, OfferStatus=None, ResponseGroup=None, AWSAccessKeyId=None):
+def SellerListingSearch(SellerId, Title=None, Sort=None, ListingPage=None, OfferStatus=None, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''SellerListingSearch in AWS'''
 
     argv = vars()
@@ -980,20 +1011,20 @@ def SellerListingSearch(SellerId, Title=None, Sort=None, ListingPage=None, Offer
         ('SellerListings', plugins['isPaged']['SellerListings']), plugins)
 
 
-def XMLSellerListingSearch(SellerId, Title=None, Sort=None, ListingPage=None, OfferStatus=None, ResponseGroup=None, AWSAccessKeyId=None):
+def XMLSellerListingSearch(SellerId, Title=None, Sort=None, ListingPage=None, OfferStatus=None, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''DOM representation of SellerListingSearch in AWS'''
 
     Operation = "SellerListingSearch"
     return query(buildRequest(vars()))
 
 
-def CustomerContentSearch(Name=None, Email=None, CustomerPage=1, ResponseGroup=None, AWSAccessKeyId=None):
+def CustomerContentSearch(Name=None, Email=None, CustomerPage=1, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''CustomerContentSearch in AWS'''
 
     return rawIterator(XMLCustomerContentSearch, vars(), 'Customers', __plugins['CustomerContentSearch'])
 
 
-def XMLCustomerContentSearch(Name=None, Email=None, CustomerPage=1, ResponseGroup=None, AWSAccessKeyId=None):
+def XMLCustomerContentSearch(Name=None, Email=None, CustomerPage=1, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''DOM representation of CustomerContentSearch in AWS'''
 
     Operation = "CustomerContentSearch"
@@ -1004,7 +1035,7 @@ def XMLCustomerContentSearch(Name=None, Email=None, CustomerPage=1, ResponseGrou
     return query(buildRequest(argv))
 
 
-def CustomerContentLookup(CustomerId, ReviewPage=1, ResponseGroup=None, AWSAccessKeyId=None):
+def CustomerContentLookup(CustomerId, ReviewPage=1, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''CustomerContentLookup in AWS'''
 
     argv = vars()
@@ -1018,7 +1049,7 @@ def CustomerContentLookup(CustomerId, ReviewPage=1, ResponseGroup=None, AWSAcces
     return rawIterator(XMLCustomerContentLookup, argv, 'Customers', __plugins['CustomerContentLookup'])
 
 
-def XMLCustomerContentLookup(CustomerId, ReviewPage=1, ResponseGroup=None, AWSAccessKeyId=None):
+def XMLCustomerContentLookup(CustomerId, ReviewPage=1, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''DOM representation of CustomerContentLookup in AWS'''
 
     Operation = "CustomerContentLookup"
@@ -1026,14 +1057,14 @@ def XMLCustomerContentLookup(CustomerId, ReviewPage=1, ResponseGroup=None, AWSAc
 
 
 # BrowseNode
-def BrowseNodeLookup(BrowseNodeId, ResponseGroup=None, AWSAccessKeyId=None):
+def BrowseNodeLookup(BrowseNodeId, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     """
     BrowseNodeLookup in AWS 
     """
     return rawIterator(XMLBrowseNodeLookup, vars(), 'BrowseNodes', __plugins['BrowseNodeLookup'])
 
 
-def XMLBrowseNodeLookup(BrowseNodeId, ResponseGroup=None, AWSAccessKeyId=None):
+def XMLBrowseNodeLookup(BrowseNodeId, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''DOM representation of BrowseNodeLookup in AWS'''
     
     Operation = "BrowseNodeLookup"
@@ -1041,12 +1072,12 @@ def XMLBrowseNodeLookup(BrowseNodeId, ResponseGroup=None, AWSAccessKeyId=None):
 
 
 # Help
-def Help(HelpType, About, ResponseGroup=None, AWSAccessKeyId=None):
+def Help(HelpType, About, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''Help in AWS'''
     return rawObject(XMLHelp, vars(), 'Information', __plugins['Help'])
 
 
-def XMLHelp(HelpType, About, ResponseGroup=None, AWSAccessKeyId=None):
+def XMLHelp(HelpType, About, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''DOM representation of Help in AWS'''
 
     Operation = "Help"
@@ -1054,12 +1085,12 @@ def XMLHelp(HelpType, About, ResponseGroup=None, AWSAccessKeyId=None):
 
 
 # Transaction
-def TransactionLookup(TransactionId, ResponseGroup=None, AWSAccessKeyId=None):
+def TransactionLookup(TransactionId, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''TransactionLookup in AWS'''
     return rawIterator(XMLTransactionLookup, vars(), 'Transactions', __plugins['TransactionLookup'])
     
 
-def XMLTransactionLookup(TransactionId, ResponseGroup=None, AWSAccessKeyId=None):
+def XMLTransactionLookup(TransactionId, ResponseGroup=None, AWSAccessKeyId=None, AssociateTag=None):
     '''DOM representation of TransactionLookup in AWS'''
 
     Operation = "TransactionLookup"
